@@ -69,7 +69,7 @@ class FeedForward(nn.Module):
         x = self.linear2(x)
         return x
     
-class MultiHeadAttention(nn.Module):
+class MultiHeadAttentionBlock(nn.Module):
     def __init__(self, embed_size : int, num_heads : int, dropout : float) -> None:
         super().__init__()
         self.embed_size = embed_size
@@ -126,7 +126,7 @@ class ResidualConnection(nn.Module):
 class EncoderLayer(nn.Module):
     def __init__(self, embed_size : int, num_heads : int, hidden_size : int, dropout : float) -> None:
         super().__init__()
-        self.self_attn = MultiHeadAttention(embed_size, num_heads, dropout)
+        self.self_attn = MultiHeadAttentionBlock(embed_size, num_heads, dropout)
         self.feed_forward = FeedForward(embed_size, hidden_size, dropout)
         self.norm1 = LayerNorm(embed_size)
         self.norm2 = LayerNorm(embed_size)
@@ -157,8 +157,8 @@ class Encoder(nn.Module):
 class DecoderLayer(nn.Module):
     def __init__(self, embed_size : int, num_heads : int, hidden_size : int, dropout : float) -> None:
         super().__init__()
-        self.self_attn = MultiHeadAttention(embed_size, num_heads, dropout)
-        self.enc_dec_attn = MultiHeadAttention(embed_size, num_heads, dropout) #cross attention layer
+        self.self_attn = MultiHeadAttentionBlock(embed_size, num_heads, dropout)
+        self.enc_dec_attn = MultiHeadAttentionBlock(embed_size, num_heads, dropout) #cross attention layer
         self.feed_forward = FeedForward(embed_size, hidden_size, dropout)
         self.norm1 = LayerNorm(embed_size)
         self.norm2 = LayerNorm(embed_size)
@@ -247,8 +247,8 @@ def build_transformer(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int
     encoder_blocks = []
     for _ in range(N):
         encoder_self_attention_block = MultiHeadAttentionBlock(embed_size, num_heads, dropout)
-        feed_forward_block = FeedForwardBlock(embed_size, hidden_size, dropout)
-        encoder_block = EncoderBlock(embed_size, encoder_self_attention_block, feed_forward_block, dropout)
+        feed_forward_block = FeedForward(embed_size, hidden_size, dropout)
+        encoder_block = EncoderLayer(embed_size, encoder_self_attention_block, feed_forward_block, dropout)
         encoder_blocks.append(encoder_block)
     
     #creating the decoder block
@@ -256,8 +256,8 @@ def build_transformer(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int
     for _ in range(N):
         decoder_self_attention_block = MultiHeadAttentionBlock(embed_size, num_heads, dropout)
         enc_dec_attention_block = MultiHeadAttentionBlock(embed_size, num_heads, dropout)
-        feed_forward_block = FeedForwardBlock(embed_size, hidden_size, dropout)
-        decoder_block = DecoderBlock(embed_size, decoder_self_attention_block, enc_dec_attention_block, feed_forward_block, dropout)
+        feed_forward_block = FeedForward(embed_size, hidden_size, dropout)
+        decoder_block = DecoderLayer(embed_size, decoder_self_attention_block, enc_dec_attention_block, feed_forward_block, dropout)
         decoder_blocks.append(decoder_block)
 
     encoder = Encoder(encoder_blocks)
